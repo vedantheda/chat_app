@@ -1,4 +1,8 @@
+import 'dart:io';
+
+import 'package:chat_app/widgets/user_image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 
 final _firebase = FirebaseAuth.instance;
@@ -17,13 +21,20 @@ class _AuthScreenState extends State<AuthScreen> {
   var _isLogin = true;
   var _userEmail = '';
   var _userPassword = '';
+  File? _selectedImage;
 
   void _submit() async {
     final isValid = _formKey.currentState!.validate();
 
-    if (!isValid) {
+    if (!isValid || !_isLogin && _selectedImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please pick an image.'),
+        ),
+      );
       return;
     }
+
     _formKey.currentState!.save();
     try {
       if (_isLogin) {
@@ -36,7 +47,14 @@ class _AuthScreenState extends State<AuthScreen> {
           email: _userEmail,
           password: _userPassword,
         );
-        print(userCredetials);
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('user_image')
+            .child('${userCredetials.user!.uid}.jpg');
+
+        await storageRef.putFile(_selectedImage!);
+        final imageUrl = await storageRef.getDownloadURL();
+        print(imageUrl);
       }
     } on FirebaseAuthException catch (error) {
       if (error.code == 'email-already-in-use') {}
@@ -79,6 +97,19 @@ class _AuthScreenState extends State<AuthScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          if (!_isLogin)
+                            Column(
+                              children: [
+                                const SizedBox(
+                                  height: 12,
+                                ),
+                                UserImagePicker(
+                                  onPickImage: (pickImage) {
+                                    _selectedImage = pickImage;
+                                  },
+                                ),
+                              ],
+                            ),
                           TextFormField(
                             decoration: const InputDecoration(
                                 labelText: 'Email Address'),
@@ -113,7 +144,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               _userPassword = value!;
                             },
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 20),
                           ElevatedButton(
                             onPressed: () {},
                             style: ElevatedButton.styleFrom(

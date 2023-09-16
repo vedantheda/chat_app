@@ -31,6 +31,9 @@ class _AuthScreenState extends State<AuthScreen> {
   void _submit() async {
     final isValid = _formKey.currentState!.validate();
 
+    print(_userEmail);
+    print(_userPassword);
+
     if (!isValid || !_isLogin && _selectedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -188,7 +191,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             const CircularProgressIndicator(),
                           if (!_isAuthenticating)
                             ElevatedButton(
-                              onPressed: () {},
+                              onPressed: _submit,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Theme.of(context)
                                     .colorScheme
